@@ -1,0 +1,21 @@
+# Cloudflare Worker/Pages config (from frontend/).
+# Requires: npm run build (with @astrojs/cloudflare) then npx wrangler deploy
+#
+# Persist Supabase env (run once, or use dashboard Variables and Secrets):
+#   npx wrangler secret put PUBLIC_SUPABASE_URL
+#   npx wrangler secret put PUBLIC_SUPABASE_ANON_KEY
+#
+# If deploy fails with "Invalid binding SESSION", create a KV namespace and add:
+#   npx wrangler kv:namespace create SESSION
+#   [[kv_namespaces]]
+#   binding = "SESSION"
+#   id = "<id from create output>"
+
+name = "auditor"
+compatibility_date = "2024-01-01"
+main = "dist/_worker.js/index.js"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "dist"
+binding = "ASSETS"

@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.astro/
+.output/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# Logs and debug
+*.log
+npm-debug.log*
+.wrangler/
+
+# OS and editor
+.DS_Store
+*.swp
+*.swo
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Vite
+*.local
+
+# Optional: uncomment if you use TypeScript build info
+# *.tsbuildinfo

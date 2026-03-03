@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+    background-color: rgb(243 244 246);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+:root {
+  --color-growth-50: 255 247 235;
+  --color-growth-100: 255 235 214;
+  --color-growth-200: 255 214 173;
+  --color-growth-300: 255 184 122;
+  --color-growth-400: 255 153 71;
+  --color-growth-500: 255 130 0;
+  --color-growth-600: 204 104 0;
+  --color-growth-700: 153 78 0;
+  --color-growth-800: 102 52 0;
+  --color-growth-900: 51 26 0;
+
+  --color-neutral-0: 255 255 255;
+  --color-neutral-50: 249 250 251;
+  --color-neutral-100: 243 244 246;
+  --color-neutral-200: 229 231 235;
+  --color-neutral-300: 209 213 219;
+  --color-neutral-400: 156 163 175;
+  --color-neutral-500: 107 114 128;
+  --color-neutral-600: 75 85 99;
+  --color-neutral-700: 55 65 81;
+  --color-neutral-800: 31 41 55;
+  --color-neutral-900: 28 28 30;
+  --color-neutral-950: 17 24 39;
+
+  --color-success-300: 134 239 172;
+  --color-success-400: 74 222 128;
+  --color-success-500: 34 197 94;
+  --color-success-600: 22 163 74;
+  --color-success-700: 21 128 61;
+
+  --color-warning-300: 252 211 77;
+  --color-warning-400: 251 191 36;
+  --color-warning-500: 245 158 11;
+  --color-warning-600: 217 119 6;
+  --color-warning-700: 180 83 9;
+
+  --color-danger-300: 252 165 165;
+  --color-danger-400: 248 113 113;
+  --color-danger-500: 239 68 68;
+  --color-danger-600: 220 38 38;
+  --color-danger-700: 185 28 28;
+
+  --action-primary-bg: var(--color-growth-500);
+  --action-primary-hover: var(--color-growth-600);
+
+  --surface-page: var(--color-neutral-0);
+  --surface-card: var(--color-neutral-50);
+  --surface-inverse: var(--color-neutral-900);
+
+  --text-body: var(--color-neutral-800);
+  --text-muted: var(--color-neutral-500);
+
+  --text-display: clamp(2.5rem, 2rem + 2.5vw, 4rem);
+  --tracking-display: -0.02em;
+  --text-h2: clamp(2rem, 1.67rem + 1.67vw, 3rem);
+  --leading-h2: 1.2;
+  --text-h3: clamp(1.75rem, 1.58rem + 0.83vw, 2.25rem);
+  --text-body-size: 1.125rem;
+  --leading-body: 1.6;
+  --text-caption: 0.875rem;
+}
+
+@layer base {
+  h1 {
+    font-size: var(--text-display);
+    letter-spacing: var(--tracking-display);
+    font-weight: 700;
+  }
+  h2 {
+    font-size: var(--text-h2);
+    line-height: var(--leading-h2);
+    font-weight: 700;
+  }
+  h3 {
+    font-size: var(--text-h3);
+    font-weight: 600;
+  }
+  p {
+    font-size: var(--text-body-size);
+    line-height: var(--leading-body);
+  }
+}
+
+@layer utilities {
+  .bg-grid-white {
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}

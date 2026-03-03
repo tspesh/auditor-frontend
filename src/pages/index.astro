@@ -1,0 +1,28 @@
+---
+import Layout from '../layouts/Layout.astro';
+import App from '../components/App';
+---
+
+<Layout title="Auditor | Digital Audit Tool">
+  <!-- Hero -->
+  <section class="bg-neutral-900 text-neutral-0 py-16 lg:py-24 bg-grid-white">
+    <div class="container mx-auto px-6 text-center max-w-3xl">
+      <p class="text-growth-400 font-medium text-sm tracking-widest uppercase mb-4">
+        Automated Digital Audit
+      </p>
+      <h1 class="text-neutral-0 mb-6">
+        See Your Website<br />
+        <span class="text-growth-500">Through Your Customer's Eyes.</span>
+      </h1>
+      <p class="text-neutral-400 text-lg max-w-2xl mx-auto">
+        Sign up for a free analysis of your business positioning,
+        messaging quality, and crawl performance.
+      </p>
+    </div>
+  </section>
+
+  <!-- App (auth-gated audit panel) -->
+  <section class="container mx-auto px-6 -mt-8 relative z-10 pb-16 max-w-4xl">
+    <App client:load />
+  </section>
+</Layout>

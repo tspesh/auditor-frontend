@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AdminDashboard from '../components/AdminDashboard';
+---
+
+<Layout title="Admin | Auditor">
+  <section class="container mx-auto px-6 py-12 max-w-5xl">
+    <AdminDashboard client:load />
+  </section>
+</Layout>
