@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { API_BASE } from '../lib/api';
+import { getAPIBase, setBackendUrl } from '../lib/api';
 import { ensureSupabaseConfig, supabase } from '../lib/supabase';
 import AuthForm from './AuthForm';
 import PLGLanding from './PLGLanding';
@@ -19,6 +19,7 @@ interface Profile {
 
 export default function App() {
   const [configReady, setConfigReady] = useState(false);
+  const [backendConfigReady, setBackendConfigReady] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -30,7 +31,17 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!configReady) return;
+    fetch('/api/backend-config')
+      .then((r) => r.json())
+      .then((data: { apiUrl?: string }) => {
+        if (data?.apiUrl) setBackendUrl(data.apiUrl);
+        setBackendConfigReady(true);
+      })
+      .catch(() => setBackendConfigReady(true));
+  }, []);
+
+  useEffect(() => {
+    if (!configReady || !backendConfigReady) return;
     supabase.auth
       .getSession()
       .then(({ data: { session: s } }) => {
@@ -49,7 +60,7 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, [configReady]);
+  }, [configReady, backendConfigReady]);
 
   useEffect(() => {
     if (!session?.access_token) {
@@ -61,7 +72,7 @@ export default function App() {
 
   const fetchProfile = async (token: string, retry = true) => {
     try {
-      const resp = await fetch(`${API_BASE}/profile`, {
+      const resp = await fetch(`${getAPIBase()}/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (resp.ok) {
@@ -87,7 +98,7 @@ export default function App() {
     setProfile(null);
   };
 
-  if (!configReady || loading) {
+  if (!configReady || !backendConfigReady || loading) {
     return (
       <div className="flex justify-center py-16">
         <div className="h-8 w-8 border-4 border-growth-500 border-t-transparent rounded-full animate-spin" />

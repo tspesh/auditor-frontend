@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
-import { API_BASE } from '../lib/api';
+import { getAPIBase } from '../lib/api';
 
 interface AuditSummary {
   id: string;
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
 
   const checkAdmin = async (token: string) => {
     try {
-      const resp = await fetch(`${API_BASE}/audit/quota`, {
+      const resp = await fetch(`${getAPIBase()}/audit/quota`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!resp.ok) throw new Error('Not authenticated');
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
 
   const fetchAudits = async (token: string, p: number) => {
     try {
-      const resp = await fetch(`${API_BASE}/admin/audits?page=${p}&page_size=20`, {
+      const resp = await fetch(`${getAPIBase()}/admin/audits?page=${p}&page_size=20`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!resp.ok) throw new Error(`Failed: ${resp.status}`);
@@ -126,7 +126,7 @@ export default function AdminDashboard() {
 
   const fetchUsers = async (token: string, p: number) => {
     try {
-      const resp = await fetch(`${API_BASE}/admin/users?page=${p}&page_size=20`, {
+      const resp = await fetch(`${getAPIBase()}/admin/users?page=${p}&page_size=20`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!resp.ok) throw new Error(`Failed: ${resp.status}`);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { API_BASE } from '../lib/api';
+import { getAPIBase } from '../lib/api';
 import { supabase } from '../lib/supabase';
 
 type Mode = 'login' | 'signup';
@@ -48,7 +48,7 @@ export default function AuthForm({ onAuth, onBack, initialMode = 'login' }: Auth
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/profile/options`)
+    fetch(`${getAPIBase()}/profile/options`)
       .then((r) => r.json())
       .then(setOptions)
       .catch(() => {});
@@ -113,9 +113,9 @@ export default function AuthForm({ onAuth, onBack, initialMode = 'login' }: Auth
         if (signUpError) throw signUpError;
         // Fire-and-forget: send registration data to HubSpot (do not block signup UX)
         // #region agent log
-        fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f96197' }, body: JSON.stringify({ sessionId: 'f96197', location: 'AuthForm.tsx:hubspot_before', message: 'about to fetch hubspot', data: { url: `${API_BASE}/hubspot/submit` }, timestamp: Date.now(), hypothesisId: 'H2' }) }).catch(() => {});
+        fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f96197' }, body: JSON.stringify({ sessionId: 'f96197', location: 'AuthForm.tsx:hubspot_before', message: 'about to fetch hubspot', data: { url: `${getAPIBase()}/hubspot/submit` }, timestamp: Date.now(), hypothesisId: 'H2' }) }).catch(() => {});
         // #endregion
-        fetch(`${API_BASE}/hubspot/submit`, {
+        fetch(`${getAPIBase()}/hubspot/submit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

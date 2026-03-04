@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { API_BASE } from '../lib/api';
+import { getAPIBase } from '../lib/api';
 
 interface ProfileFormProps {
   accessToken: string;
@@ -36,7 +36,7 @@ export default function ProfileForm({ accessToken, onComplete }: ProfileFormProp
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/profile/options`)
+    fetch(`${getAPIBase()}/profile/options`)
       .then((r) => r.json())
       .then(setOptions)
       .catch(() => {});
@@ -65,7 +65,7 @@ export default function ProfileForm({ accessToken, onComplete }: ProfileFormProp
 
     setLoading(true);
     try {
-      const resp = await fetch(`${API_BASE}/profile`, {
+      const resp = await fetch(`${getAPIBase()}/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

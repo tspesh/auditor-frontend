@@ -9,7 +9,7 @@ import { PipelineProgress, StatusBadge } from './AuditPipeline';
 import type { PipelineResult } from './AuditPipeline';
 import { ReportProse } from './ReportProse';
 
-import { API_BASE } from '../lib/api';
+import { getAPIBase } from '../lib/api';
 
 interface PLGAuditResponse {
   audit_id: string | null;
@@ -93,7 +93,7 @@ export default function PLGLanding({ onShowAuth }: PLGLandingProps) {
 
     try {
       const parsed = target.startsWith('http') ? target : `https://${target}`;
-      const resp = await fetch(`${API_BASE}/plg/audit`, {
+      const resp = await fetch(`${getAPIBase()}/plg/audit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: parsed }),
@@ -117,7 +117,7 @@ export default function PLGLanding({ onShowAuth }: PLGLandingProps) {
         setAuditId(data.audit_id);
         pollRef.current = setInterval(async () => {
           try {
-            const sResp = await fetch(`${API_BASE}/plg/audit/${data.audit_id}/status`);
+            const sResp = await fetch(`${getAPIBase()}/plg/audit/${data.audit_id}/status`);
             if (!sResp.ok) return;
             const s: PLGStatusResponse = await sResp.json();
             setGuestStatus(s);

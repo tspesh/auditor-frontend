@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
-import { API_BASE } from '../lib/api';
+import { getAPIBase } from '../lib/api';
 import { PipelineProgress, StatusBadge } from './AuditPipeline';
 import { ReportProse } from './ReportProse';
 
@@ -1318,7 +1318,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
 
   const fetchHistory = useCallback(async () => {
     try {
-      const resp = await fetch(`${API_BASE}/audits`, {
+      const resp = await fetch(`${getAPIBase()}/audits`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (resp.ok) setHistory(await resp.json());
@@ -1361,7 +1361,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
   const startPolling = useCallback((id: string) => {
     pollRef.current = window.setInterval(async () => {
       try {
-        const resp = await fetch(`${API_BASE}/audit/${id}/status`, {
+        const resp = await fetch(`${getAPIBase()}/audit/${id}/status`, {
           headers: authHeaders,
         });
         if (!resp.ok) throw new Error(`Status check failed: ${resp.status}`);
@@ -1381,7 +1381,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     setActiveTargetUrl(targetUrl);
 
     try {
-      const resp = await fetch(`${API_BASE}/audit`, {
+      const resp = await fetch(`${getAPIBase()}/audit`, {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({ url: targetUrl, force_recrawl: forceRecrawl }),
@@ -1396,7 +1396,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
       setAuditId(data.audit_id);
 
       if (data.cached && data.status === 'completed') {
-        const statusResp = await fetch(`${API_BASE}/audit/${data.audit_id}/status`, {
+        const statusResp = await fetch(`${getAPIBase()}/audit/${data.audit_id}/status`, {
           headers: authHeaders,
         });
         if (statusResp.ok) {
@@ -1425,7 +1425,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     setPhase('polling');
     setActiveTargetUrl(cwvUrls[0]);
     try {
-      const resp = await fetch(`${API_BASE}/admin/cwv-audit`, {
+      const resp = await fetch(`${getAPIBase()}/admin/cwv-audit`, {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({ urls: cwvUrls }),
@@ -1451,7 +1451,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     setError(null);
 
     try {
-      const resp = await fetch(`${API_BASE}/audit/${auditId}/confirm`, {
+      const resp = await fetch(`${getAPIBase()}/audit/${auditId}/confirm`, {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({ urls }),
@@ -1477,7 +1477,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     setError(null);
 
     try {
-      const resp = await fetch(`${API_BASE}/audit/${auditId}/confirm-identity`, {
+      const resp = await fetch(`${getAPIBase()}/audit/${auditId}/confirm-identity`, {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({ feedback: identityFeedback.trim() || null }),
@@ -1513,7 +1513,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     setPhase('polling');
     if (targetUrl) setActiveTargetUrl(targetUrl);
     try {
-      const resp = await fetch(`${API_BASE}/audit/${id}/status`, { headers: authHeaders });
+      const resp = await fetch(`${getAPIBase()}/audit/${id}/status`, { headers: authHeaders });
       if (!resp.ok) throw new Error(`Failed to load audit: ${resp.status}`);
       const data: AuditStatus = await resp.json();
 
@@ -1889,13 +1889,13 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
               </nav>
               {phase === 'completed' && auditId && (
                 <a
-                  href={`${API_BASE}/audit/${auditId}/export/pdf`}
+                  href={`${getAPIBase()}/audit/${auditId}/export/pdf`}
                   className="inline-flex items-center gap-2 px-4 py-2 mb-1 mr-1 rounded-md text-sm font-medium
                              text-growth-600 border border-growth-300 hover:bg-growth-50
                              transition-colors whitespace-nowrap"
                   onClick={(e) => {
                     e.preventDefault();
-                    fetch(`${API_BASE}/audit/${auditId}/export/pdf`, {
+                    fetch(`${getAPIBase()}/audit/${auditId}/export/pdf`, {
                       headers: { Authorization: `Bearer ${accessToken}` },
                     })
                       .then(res => {
