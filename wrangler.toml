@@ -1,10 +1,6 @@
 # Cloudflare Worker/Pages config (from frontend/).
 # Requires: npm run build (with @astrojs/cloudflare) then npx wrangler deploy
 #
-# Persist Supabase env (run once, or use dashboard Variables and Secrets):
-#   npx wrangler secret put PUBLIC_SUPABASE_URL
-#   npx wrangler secret put PUBLIC_SUPABASE_ANON_KEY
-#
 # If deploy fails with "Invalid binding SESSION", create a KV namespace and add:
 #   npx wrangler kv:namespace create SESSION
 #   [[kv_namespaces]]
@@ -15,6 +11,16 @@ name = "auditor"
 compatibility_date = "2024-01-01"
 main = "dist/_worker.js/index.js"
 compatibility_flags = ["nodejs_compat"]
+
+# Secrets (wrangler secret put) persist across deploys and are NOT wiped when you deploy.
+# Set these once, then deploy as usual:
+#   npx wrangler secret put PUBLIC_API_URL        # e.g. https://auditor.fly.dev
+#   npx wrangler secret put PUBLIC_SUPABASE_URL
+#   npx wrangler secret put PUBLIC_SUPABASE_ANON_KEY
+#
+# Do NOT rely on Dashboard "Variables" only: wrangler deploy replaces the Worker
+# config with this file, so Dashboard vars (non-secret) get overwritten by an empty
+# config. Use Secrets so values persist.
 
 [assets]
 directory = "dist"
