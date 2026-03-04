@@ -7,7 +7,7 @@
     "/",
     "/_astro/*",
     "/.assetsignore",
-    "/api/*",
+    "/favicon.svg",
     "/admin"
   ]
 }

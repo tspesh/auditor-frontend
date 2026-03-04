@@ -8,7 +8,7 @@
 #   id = "<id from create output>"
 
 name = "auditor"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-09-23"
 main = "dist/_worker.js/index.js"
 compatibility_flags = ["nodejs_compat"]
 
@@ -21,6 +21,11 @@ compatibility_flags = ["nodejs_compat"]
 # Do NOT rely on Dashboard "Variables" only: wrangler deploy replaces the Worker
 # config with this file, so Dashboard vars (non-secret) get overwritten by an empty
 # config. Use Secrets so values persist.
+
+[vars]
+PUBLIC_SUPABASE_URL = "https://vjoykkrddxauudkojzqi.supabase.co"
+PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqb3lra3JkZHhhdXVka29qenFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjgzNjEsImV4cCI6MjA4NzY0NDM2MX0.wjCveajoX1hFbvkj6-bsfpjMlT_UlJF6Xt696Z5HsVw"
+PUBLIC_API_URL = "https://auditor.fly.dev"
 
 [assets]
 directory = "dist"
