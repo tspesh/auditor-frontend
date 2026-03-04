@@ -15,6 +15,13 @@ export default defineConfig({
     tailwind({ applyBaseStyles: false }),
   ],
   vite: {
+    // Use React's edge server renderer in production so Cloudflare Workers don't hit MessageChannel (not available in Workers runtime).
+    resolve: {
+      alias:
+        process.env.NODE_ENV === 'production'
+          ? { 'react-dom/server': 'react-dom/server.edge' }
+          : {},
+    },
     // Expose PUBLIC_* from process.env so Cloudflare Pages build has them in import.meta.env.
     envPrefix: ['PUBLIC_', 'VITE_'],
     define: {
