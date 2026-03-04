@@ -87,9 +87,6 @@ export default function AuthForm({ onAuth, onBack, initialMode = 'login' }: Auth
 
     try {
       if (mode === 'signup') {
-        // #region agent log
-        fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '095420' }, body: JSON.stringify({ sessionId: '095420', location: 'AuthForm.tsx:signUp', message: 'signUp called', data: {}, timestamp: Date.now(), hypothesisId: 'signup' }) }).catch(() => {});
-        // #endregion
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -107,14 +104,7 @@ export default function AuthForm({ onAuth, onBack, initialMode = 'login' }: Auth
             },
           },
         });
-        // #region agent log
-        if (signUpError) fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '095420' }, body: JSON.stringify({ sessionId: '095420', location: 'AuthForm.tsx:signUpError', message: 'Supabase signUp error', data: { msg: signUpError?.message ?? '', status: (signUpError as { status?: number })?.status }, timestamp: Date.now(), hypothesisId: 'signup' }) }).catch(() => {});
-        // #endregion
         if (signUpError) throw signUpError;
-        // Fire-and-forget: send registration data to HubSpot (do not block signup UX)
-        // #region agent log
-        fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f96197' }, body: JSON.stringify({ sessionId: 'f96197', location: 'AuthForm.tsx:hubspot_before', message: 'about to fetch hubspot', data: { url: `${getAPIBase()}/hubspot/submit` }, timestamp: Date.now(), hypothesisId: 'H2' }) }).catch(() => {});
-        // #endregion
         fetch(`${getAPIBase()}/hubspot/submit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -131,34 +121,14 @@ export default function AuthForm({ onAuth, onBack, initialMode = 'login' }: Auth
             advertising_budgets: runningAds ? monthlyAdBudget : '',
           }),
         })
-          .then(async (r) => {
-            // #region agent log
-            const text = await r.text();
-            fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f96197' }, body: JSON.stringify({ sessionId: 'f96197', location: 'AuthForm.tsx:hubspot_response', message: 'hubspot fetch result', data: { status: r.status, ok: r.ok, body: text.slice(0, 200) }, timestamp: Date.now(), hypothesisId: 'H2' }) }).catch(() => {});
-            // #endregion
-          })
-          .catch((err) => {
-            // #region agent log
-            fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f96197' }, body: JSON.stringify({ sessionId: 'f96197', location: 'AuthForm.tsx:hubspot_catch', message: 'hubspot fetch failed', data: { error: String(err) }, timestamp: Date.now(), hypothesisId: 'H2' }) }).catch(() => {});
-            // #endregion
-          });
+          .catch(() => {});
         setSuccess('Check your email to confirm your account.');
       } else {
-        // #region agent log
-        fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '095420' }, body: JSON.stringify({ sessionId: '095420', location: 'AuthForm.tsx:login', message: 'signInWithPassword called', data: { emailLength: email.length }, timestamp: Date.now(), hypothesisId: 'A' }) }).catch(() => {});
-        // #endregion
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        // #region agent log
-        if (signInError) fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '095420' }, body: JSON.stringify({ sessionId: '095420', location: 'AuthForm.tsx:signInError', message: 'Supabase signIn error', data: { msg: signInError?.message ?? '', name: signInError?.name ?? '' }, timestamp: Date.now(), hypothesisId: 'A' }) }).catch(() => {});
-        // #endregion
         if (signInError) throw signInError;
         onAuth();
       }
     } catch (err: unknown) {
-      // #region agent log
-      const errMsg = err instanceof Error ? err.message : String(err);
-      fetch('http://127.0.0.1:7696/ingest/26ff8251-de9e-4b58-8f6e-bb66153fe70f', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '095420' }, body: JSON.stringify({ sessionId: '095420', location: 'AuthForm.tsx:catch', message: 'Login catch', data: { errMsg }, timestamp: Date.now(), hypothesisId: 'A' }) }).catch(() => {});
-      // #endregion
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
