@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import App from '../components/App';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 ---
 
 <Layout title="Auditor | Digital Audit Tool">
@@ -23,6 +24,8 @@ import App from '../components/App';
 
   <!-- App (auth-gated audit panel) -->
   <section class="container mx-auto px-6 -mt-8 relative z-10 pb-16 max-w-4xl">
-    <App client:load />
+    <ErrorBoundary client:load>
+      <App client:load />
+    </ErrorBoundary>
   </section>
 </Layout>

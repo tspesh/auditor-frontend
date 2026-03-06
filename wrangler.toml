@@ -8,7 +8,7 @@
 #   id = "<id from create output>"
 
 name = "auditor"
-compatibility_date = "2024-09-23"
+compatibility_date = "2025-12-01"
 main = "dist/_worker.js/index.js"
 compatibility_flags = ["nodejs_compat"]
 
@@ -22,10 +22,11 @@ compatibility_flags = ["nodejs_compat"]
 # config with this file, so Dashboard vars (non-secret) get overwritten by an empty
 # config. Use Secrets so values persist.
 
+# Runtime variables -- set as persistent secrets so they survive redeploys:
+#   npx wrangler secret put PUBLIC_SUPABASE_URL
+#   npx wrangler secret put PUBLIC_SUPABASE_ANON_KEY
+#   npx wrangler secret put PUBLIC_API_URL
 [vars]
-PUBLIC_SUPABASE_URL = "https://vjoykkrddxauudkojzqi.supabase.co"
-PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqb3lra3JkZHhhdXVka29qenFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjgzNjEsImV4cCI6MjA4NzY0NDM2MX0.wjCveajoX1hFbvkj6-bsfpjMlT_UlJF6Xt696Z5HsVw"
-PUBLIC_API_URL = "https://auditor.fly.dev"
 
 [assets]
 directory = "dist"

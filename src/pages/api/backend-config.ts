@@ -3,8 +3,9 @@ import type { APIRoute } from 'astro';
 export const prerender = false;
 
 /**
- * Returns the backend API URL from Cloudflare Worker runtime env (Secrets).
- * Must be SSR (prerender=false) to access Cloudflare bindings at runtime.
+ * Returns the backend API URL from Cloudflare Worker runtime env.
+ * App.tsx fetches this on mount to set the runtime API base when the
+ * build-time PUBLIC_API_URL was empty.
  */
 export const GET: APIRoute = ({ locals }) => {
   const rt = (locals as Record<string, unknown>).runtime as Record<string, unknown> | undefined;

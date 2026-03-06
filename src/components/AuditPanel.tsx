@@ -3,6 +3,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { getAPIBase } from '../lib/api';
 import { PipelineProgress, StatusBadge } from './AuditPipeline';
 import { ReportProse } from './ReportProse';
+import { Card, TagList, ScoreRing, Stat } from './ui';
 
 // ─── Types mirroring the Python schemas ───────────────────────────────────────
 
@@ -145,66 +146,6 @@ function HistoryStatusBadge({ status }: { status: string }) {
     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>
       {s.label}
     </span>
-  );
-}
-
-function ScoreRing({ score, max = 10 }: { score: number; max?: number }) {
-  const pct = (score / max) * 100;
-  const color =
-    pct >= 80 ? 'text-green-500' :
-    pct >= 50 ? 'text-yellow-500' :
-    'text-red-500';
-  const strokeColor =
-    pct >= 80 ? 'stroke-green-500' :
-    pct >= 50 ? 'stroke-yellow-500' :
-    'stroke-red-500';
-
-  return (
-    <div className="relative inline-flex items-center justify-center w-20 h-20">
-      <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r="34" fill="none" strokeWidth="6" className="stroke-neutral-200" />
-        <circle
-          cx="40" cy="40" r="34" fill="none" strokeWidth="6"
-          className={strokeColor}
-          strokeLinecap="round"
-          strokeDasharray={`${(pct / 100) * 213.6} 213.6`}
-        />
-      </svg>
-      <span className={`absolute font-heading font-bold text-xl ${color}`}>{score}</span>
-    </div>
-  );
-}
-
-function Card({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`bg-white rounded-xl border border-neutral-200 overflow-hidden ${className}`}>
-      <div className="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
-        <h3 className="font-heading font-semibold text-lg text-neutral-900">{title}</h3>
-      </div>
-      <div className="px-6 py-6">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function TagList({ items, color = 'growth' }: { items: string[]; color?: string }) {
-  if (!items.length) return <span className="text-neutral-400 italic text-sm">None detected</span>;
-  const colorMap: Record<string, string> = {
-    growth: 'bg-growth-50 text-growth-700 border-growth-200',
-    green: 'bg-green-50 text-green-700 border-green-200',
-    red: 'bg-red-50 text-red-700 border-red-200',
-    neutral: 'bg-neutral-100 text-neutral-700 border-neutral-200',
-  };
-  const cls = colorMap[color] ?? colorMap.growth;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item, i) => (
-        <span key={i} className={`inline-block px-3 py-1 rounded-md text-sm border ${cls}`}>
-          {item}
-        </span>
-      ))}
-    </div>
   );
 }
 
@@ -781,17 +722,6 @@ function CrawlSummary({ data, noCard = false }: { data: AuditStatus; noCard?: bo
   return <Card title="Crawl Summary">{body}</Card>;
 }
 
-function Stat({ label, value, alert = false }: { label: string; value: number; alert?: boolean }) {
-  return (
-    <div className="text-center p-3 bg-neutral-50 rounded-lg">
-      <p className={`text-2xl font-heading font-bold ${alert ? 'text-red-500' : 'text-neutral-900'}`}>
-        {value}
-      </p>
-      <p className="text-xs text-neutral-500 mt-1">{label}</p>
-    </div>
-  );
-}
-
 // ─── URL Review Panel ─────────────────────────────────────────────────────────
 
 function maxCrawlUrlsForRole(role: string): number | null {
@@ -1304,10 +1234,10 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     }
   }, [result, reportTabs, activeReportTab]);
 
-  const authHeaders = {
+  const authHeaders = useMemo(() => ({
     'Content-Type': 'application/json',
     Authorization: `Bearer ${accessToken}`,
-  };
+  }), [accessToken]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current !== null) {
