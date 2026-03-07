@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import { ViewTransitions, fade } from 'astro:transitions';
+import Nav from '../components/Nav';
 
 interface Props {
   title: string;
@@ -46,28 +48,22 @@ const supabaseAnonKey =
       rel="stylesheet"
     />
     <title>{title}</title>
+    <ViewTransitions />
   </head>
-  <body class="min-h-screen bg-neutral-100 text-neutral-800">
+  <body class="flex flex-col min-h-screen bg-neutral-100 text-neutral-800">
     <!-- Google Tag Manager (noscript) -->
     <noscript>
       <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T37JV8Q4"
         height="0" width="0" style="display:none;visibility:hidden"></iframe>
     </noscript>
     <!-- End Google Tag Manager (noscript) -->
-    <header class="bg-neutral-900 text-neutral-0">
-      <div class="container mx-auto px-6 py-4 flex items-center justify-between">
-        <a href="/" class="font-heading text-xl font-bold tracking-tight">
-          <span class="text-growth-500">Auditor</span>
-          <span class="text-neutral-400 font-normal text-caption ml-2">by Better Off Growth</span>
-        </a>
-      </div>
-    </header>
+    <Nav client:load transition:persist />
 
-    <main>
+    <main class="flex-1" transition:animate={fade({ duration: '0.15s' })}>
       <slot />
     </main>
 
-    <footer class="bg-neutral-900 text-neutral-400 mt-24">
+    <footer class="bg-neutral-900 text-neutral-400 mt-auto pt-24" transition:animate="none">
       <div class="container mx-auto px-6 py-8 text-center text-sm">
         <p>&copy; {new Date().getFullYear()} Better Off Growth. All Rights Reserved.</p>
       </div>

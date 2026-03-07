@@ -8,6 +8,8 @@
     "/_astro/*",
     "/.assetsignore",
     "/favicon.svg",
-    "/admin"
+    "/admin",
+    "/dashboard",
+    "/login"
   ]
 }

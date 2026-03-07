@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import App from '../components/App';
+import LandingApp from '../components/LandingApp';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 ---
 
@@ -22,10 +22,10 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
     </div>
   </section>
 
-  <!-- App (auth-gated audit panel) -->
+  <!-- Guest audit flow -->
   <section class="container mx-auto px-6 -mt-8 relative z-10 pb-16 max-w-4xl">
     <ErrorBoundary client:load>
-      <App client:load />
+      <LandingApp client:load />
     </ErrorBoundary>
   </section>
 </Layout>

@@ -143,6 +143,7 @@ interface AuditHistoryItem {
 interface AuditPanelProps {
   accessToken: string;
   userRole: string;
+  initialAuditId?: string;
 }
 
 type Phase = 'idle' | 'polling' | 'reviewing' | 'reviewing_identity' | 'analyzing' | 'completed' | 'failed';
@@ -1351,7 +1352,7 @@ function UrlReviewPanel({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
+export default function AuditPanel({ accessToken, userRole, initialAuditId }: AuditPanelProps) {
   const [url, setUrl] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
   const [auditId, setAuditId] = useState<string | null>(null);
@@ -1654,6 +1655,15 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     }
   };
 
+  // Auto-load a specific audit when navigated to via /audit/:id
+  const initialLoadDone = useRef(false);
+  useEffect(() => {
+    if (initialAuditId && !initialLoadDone.current) {
+      initialLoadDone.current = true;
+      loadAudit(initialAuditId);
+    }
+  }, [initialAuditId]);
+
   const reset = () => {
     stopPolling();
     setPhase('idle');
@@ -1731,6 +1741,18 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
 
   return (
     <div className="space-y-8">
+      {initialAuditId && (
+        <a
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 hover:text-growth-600 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Dashboard
+        </a>
+      )}
+
       {/* Mode toggle (admin only) */}
       {isAdmin && (
         <div className="flex gap-2 p-1 bg-neutral-100 rounded-lg w-fit">
@@ -1942,8 +1964,8 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
           <ul className="divide-y divide-neutral-100">
             {history.map((item) => (
               <li key={item.audit_id}>
-                <button
-                  onClick={() => loadAudit(item.audit_id, item.target_url)}
+                <a
+                  href={`/audit/${item.audit_id}`}
                   className="w-full px-6 py-4 flex items-center justify-between hover:bg-neutral-50 transition-colors text-left group"
                 >
                   <div className="min-w-0 flex-1">
@@ -1980,7 +2002,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
-                </button>
+                </a>
               </li>
             ))}
           </ul>

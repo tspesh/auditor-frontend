@@ -1,0 +1,14 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AuditDetailPage from '../../components/AuditDetailPage';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+---
+
+<Layout title="Audit Report | Auditor">
+  <section class="container mx-auto px-6 py-8 max-w-4xl">
+    <AuditDetailPage auditId={id!} client:load />
+  </section>
+</Layout>

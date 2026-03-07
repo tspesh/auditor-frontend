@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import DashboardPage from '../components/DashboardPage';
+---
+
+<Layout title="Dashboard | Auditor">
+  <section class="container mx-auto px-6 py-8 max-w-4xl">
+    <DashboardPage client:load />
+  </section>
+</Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LoginPage from '../components/LoginPage';
+---
+
+<Layout title="Sign In | Auditor">
+  <section class="container mx-auto px-6 py-12 max-w-lg">
+    <LoginPage client:load />
+  </section>
+</Layout>
