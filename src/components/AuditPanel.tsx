@@ -88,6 +88,22 @@ interface PerformanceResult {
   error: string | null;
 }
 
+interface TechnicalRecommendation {
+  category: string;
+  severity: string;
+  issue: string;
+  evidence: string;
+  fix: string;
+  estimated_impact: string;
+}
+
+interface DeepPerformanceResult {
+  url: string;
+  diagnostics: Record<string, unknown>;
+  technical_profile: Record<string, unknown> | null;
+  recommendations: TechnicalRecommendation[];
+}
+
 interface AuditStatus {
   audit_id: string;
   status: 'queued' | 'running' | 'completed' | 'failed' | 'not_found' | 'urls_ready' | 'identity_ready';
@@ -103,6 +119,7 @@ interface AuditStatus {
   ux: UXAnalysis | null;
   cro: CROAnalysis | null;
   performance: PerformanceResult[];
+  deep_performance: DeepPerformanceResult[];
   urls_measured: number;
   errors: string[];
   executive_summary: string | null;
@@ -569,6 +586,10 @@ function PerformanceSection({ data, noCard = false }: { data: PerformanceResult[
           </div>
         </div>
 
+        <p className="text-xs text-neutral-500 italic">
+          These findings are based solely on what can be observed externally and may not reflect internal infrastructure decisions. Some third-party marketing and analytics tools require implementation patterns that impact performance metrics but provide essential business functionality.
+        </p>
+
         {/* CWV metrics table */}
         {sortedData.length > 0 && (
           <div className="overflow-x-auto">
@@ -659,6 +680,150 @@ function PerformanceSection({ data, noCard = false }: { data: PerformanceResult[
   );
   if (noCard) return body;
   return <Card title="Core Web Vitals">{body}</Card>;
+}
+
+// ─── Deep Performance Section ──────────────────────────────────────────────────
+
+const CATEGORY_LABELS: Record<string, string> = {
+  'render-blocking': 'Render-Blocking Resources',
+  images: 'Image Optimization',
+  javascript: 'JavaScript',
+  css: 'CSS',
+  fonts: 'Font Loading',
+  dom: 'DOM Complexity',
+  'third-party': 'Third-Party Scripts',
+  compression: 'Compression',
+  other: 'Other',
+};
+
+const CATEGORY_ORDER = Object.keys(CATEGORY_LABELS);
+
+function SeverityBadge({ severity }: { severity: string }) {
+  const cls =
+    severity === 'critical' ? 'bg-red-100 text-red-800 border-red-200' :
+    severity === 'high' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+    severity === 'medium' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+    'bg-blue-100 text-blue-700 border-blue-200';
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${cls}`}>
+      {severity}
+    </span>
+  );
+}
+
+function DeepPerformanceSection({ data, noCard = false }: { data: DeepPerformanceResult[]; noCard?: boolean }) {
+  const [expandedUrl, setExpandedUrl] = useState<string | null>(data[0]?.url ?? null);
+
+  const allRecs = data.flatMap(d => d.recommendations);
+  const criticalCount = allRecs.filter(r => r.severity === 'critical').length;
+  const highCount = allRecs.filter(r => r.severity === 'high').length;
+
+  const body = (
+    <div className="space-y-6">
+      {/* Summary stats */}
+      <div className="flex items-start gap-6">
+        <div className="flex-1 grid grid-cols-4 gap-4">
+          <Stat label="Pages Audited" value={data.length} />
+          <Stat label="Total Findings" value={allRecs.length} />
+          <Stat label="Critical" value={criticalCount} alert={criticalCount > 0} />
+          <Stat label="High" value={highCount} alert={highCount > 0} />
+        </div>
+      </div>
+
+      <p className="text-xs text-neutral-500 italic">
+        These findings are based solely on what can be observed externally and may not reflect internal infrastructure decisions. Some third-party marketing and analytics tools require implementation patterns that impact performance metrics but provide essential business functionality.
+      </p>
+      <p className="text-xs text-neutral-500 italic">
+        This audit covers the homepage and the 3 other worst-performing pages from the Core Web Vitals test. Most pages on a site share the same underlying tech stack, so the issues and recommendations identified here are typically representative of the full site.
+      </p>
+
+      {/* Per-URL accordion */}
+      {data.map((result) => {
+        const isExpanded = expandedUrl === result.url;
+
+        const categorized = new Map<string, TechnicalRecommendation[]>();
+        for (const rec of result.recommendations) {
+          const cat = rec.category || 'other';
+          if (!categorized.has(cat)) categorized.set(cat, []);
+          categorized.get(cat)!.push(rec);
+        }
+
+        const sortedCategories = [...categorized.entries()].sort(
+          (a, b) => (CATEGORY_ORDER.indexOf(a[0]) === -1 ? 99 : CATEGORY_ORDER.indexOf(a[0])) -
+                    (CATEGORY_ORDER.indexOf(b[0]) === -1 ? 99 : CATEGORY_ORDER.indexOf(b[0]))
+        );
+
+        let displayUrl: string;
+        try {
+          const u = new URL(result.url);
+          const path = u.pathname.replace(/\/$/, '') || '/';
+          displayUrl = path === '/' ? u.origin : path;
+        } catch { displayUrl = result.url; }
+
+        return (
+          <div key={result.url} className="border border-neutral-200 rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setExpandedUrl(isExpanded ? null : result.url)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-neutral-50 hover:bg-neutral-100 transition-colors text-left"
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm text-growth-600">{displayUrl}</span>
+                <span className="text-xs text-neutral-500">
+                  {result.recommendations.length} finding{result.recommendations.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <svg className={`w-4 h-4 text-neutral-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {isExpanded && (
+              <div className="px-4 py-4 space-y-5">
+                {sortedCategories.map(([category, recs]) => (
+                  <div key={category}>
+                    <h4 className="text-sm font-semibold text-neutral-800 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-growth-500 inline-block" />
+                      {CATEGORY_LABELS[category] || category}
+                      <span className="text-xs font-normal text-neutral-400">({recs.length})</span>
+                    </h4>
+                    <div className="space-y-3 pl-3 border-l-2 border-neutral-200">
+                      {recs.map((rec, j) => (
+                        <div key={j} className="space-y-1.5">
+                          <div className="flex items-start gap-2">
+                            <SeverityBadge severity={rec.severity} />
+                            <p className="text-sm font-medium text-neutral-900">{rec.issue}</p>
+                          </div>
+                          <div className="ml-[3.5rem] space-y-1">
+                            <p className="text-xs text-neutral-500 bg-neutral-50 rounded px-2 py-1 font-mono leading-relaxed">
+                              {rec.evidence}
+                            </p>
+                            <p className="text-sm text-neutral-700">{rec.fix}</p>
+                            {rec.estimated_impact && (
+                              <p className="text-xs font-medium text-growth-700 bg-growth-50 rounded px-2 py-1 inline-block">
+                                {rec.estimated_impact}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {result.recommendations.length === 0 && (
+                  <p className="text-sm text-neutral-500 italic">No significant issues found for this page.</p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  if (noCard) return body;
+  return <Card title="Deep Performance Audit">{body}</Card>;
 }
 
 function CrawlSummary({ data, noCard = false }: { data: AuditStatus; noCard?: boolean }) {
@@ -1206,9 +1371,12 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
   const [cwvNewUrl, setCwvNewUrl] = useState('');
   const [cwvAddError, setCwvAddError] = useState<string | null>(null);
   const [cwvSubmitLoading, setCwvSubmitLoading] = useState(false);
+  const [csvUrls, setCsvUrls] = useState<string[]>([]);
+  const csvFileRef = useRef<HTMLInputElement | null>(null);
 
   const canRecrawl = userRole === 'admin' || userRole === 'paid';
   const isAdmin = userRole === 'admin';
+  const csvLimit = maxCrawlUrlsForRole(userRole);
 
   const reportTabs = useMemo(() => {
     if (!result) return [];
@@ -1224,6 +1392,7 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     if (result.ux) tabs.push({ id: 'ux', label: 'UX' });
     if (result.cro) tabs.push({ id: 'cro', label: 'CRO' });
     if (!isCwvOnly && result.performance?.length) tabs.push({ id: 'performance', label: 'Core Web Vitals' });
+    if (result.deep_performance?.length) tabs.push({ id: 'deep_performance', label: 'Deep Performance' });
     return tabs;
   }, [result]);
 
@@ -1311,10 +1480,15 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     setActiveTargetUrl(targetUrl);
 
     try {
+      const payload: Record<string, unknown> = { url: targetUrl, force_recrawl: forceRecrawl };
+      if (csvUrls.length > 0) {
+        payload.urls = csvUrls;
+      }
+
       const resp = await fetch(`${getAPIBase()}/audit`, {
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify({ url: targetUrl, force_recrawl: forceRecrawl }),
+        body: JSON.stringify(payload),
       });
 
       if (!resp.ok) {
@@ -1333,6 +1507,17 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
           const cachedResult: AuditStatus = await statusResp.json();
           setResult(cachedResult);
           setPhase('completed');
+          return;
+        }
+      }
+
+      if (data.status === 'urls_ready') {
+        const statusResp = await fetch(`${getAPIBase()}/audit/${data.audit_id}/status`, {
+          headers: authHeaders,
+        });
+        if (statusResp.ok) {
+          const readyResult: AuditStatus = await statusResp.json();
+          handleStatusUpdate(readyResult);
           return;
         }
       }
@@ -1481,6 +1666,30 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
     setConfirmIdentityLoading(false);
     setIdentityFeedback('');
     setActiveReportTab('executive');
+    setCsvUrls([]);
+  };
+
+  const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = (reader.result as string) ?? '';
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const parsed: string[] = [];
+      for (const line of lines) {
+        const cell = line.includes(',') ? line.split(',')[0].trim() : line;
+        if (/^https?:\/\//i.test(cell)) parsed.push(cell);
+      }
+      setCsvUrls([...new Set(parsed)]);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const clearCsv = () => {
+    setCsvUrls([]);
+    if (csvFileRef.current) csvFileRef.current.value = '';
   };
 
   const handleCwvAddUrl = (e: React.FormEvent) => {
@@ -1625,15 +1834,32 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
               />
             </div>
             {phase === 'idle' || phase === 'failed' ? (
-              <button
-                type="submit"
-                className="px-8 py-3 rounded-md font-semibold text-white
-                           bg-growth-500 hover:bg-growth-600
-                           focus:outline-none focus:ring-2 focus:ring-growth-500 focus:ring-offset-2
-                           transition-all duration-200 whitespace-nowrap"
-              >
-                Run Audit
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="px-8 py-3 rounded-md font-semibold text-white
+                             bg-growth-500 hover:bg-growth-600
+                             focus:outline-none focus:ring-2 focus:ring-growth-500 focus:ring-offset-2
+                             transition-all duration-200 whitespace-nowrap"
+                >
+                  Run Audit
+                </button>
+                <label className="px-4 py-3 rounded-md font-medium text-sm text-neutral-700 border border-neutral-300
+                                  hover:bg-neutral-50 cursor-pointer whitespace-nowrap transition-colors
+                                  inline-flex items-center gap-2">
+                  <svg className="w-4 h-4 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  Upload CSV
+                  <input
+                    ref={csvFileRef}
+                    type="file"
+                    accept=".csv,.txt"
+                    className="sr-only"
+                    onChange={handleCsvFile}
+                  />
+                </label>
+              </div>
             ) : phase === 'polling' || phase === 'analyzing' ? (
               <button type="button" disabled
                 className="px-8 py-3 rounded-md font-semibold text-white bg-growth-400 cursor-wait whitespace-nowrap"
@@ -1674,6 +1900,29 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
               </div>
             )}
           </form>
+
+          {csvUrls.length > 0 && (phase === 'idle' || phase === 'failed') && (
+            <div className="mt-4 flex items-center gap-3 p-3 bg-growth-50 border border-growth-200 rounded-md">
+              <svg className="w-5 h-5 text-growth-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="flex-1 text-sm text-growth-800 font-medium">
+                {csvUrls.length} URL{csvUrls.length !== 1 ? 's' : ''} loaded from CSV
+                {csvLimit !== null && csvUrls.length > csvLimit && (
+                  <span className="text-red-600 ml-2">
+                    (exceeds your limit of {csvLimit})
+                  </span>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={clearCsv}
+                className="text-sm text-neutral-500 hover:text-red-600 font-medium transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          )}
 
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
@@ -1875,6 +2124,9 @@ export default function AuditPanel({ accessToken, userRole }: AuditPanelProps) {
             )}
             {activeReportTab === 'performance' && result.performance && result.performance.length > 0 && (
               <PerformanceSection data={result.performance} noCard />
+            )}
+            {activeReportTab === 'deep_performance' && result.deep_performance && result.deep_performance.length > 0 && (
+              <DeepPerformanceSection data={result.deep_performance} noCard />
             )}
           </div>
         </div>

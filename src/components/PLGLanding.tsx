@@ -70,6 +70,8 @@ export default function PLGLanding({ onShowAuth }: PLGLandingProps) {
   const [auditId, setAuditId] = useState<string | null>(null);
   const [guestStatus, setGuestStatus] = useState<PLGStatusResponse | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [csvUrls, setCsvUrls] = useState<string[]>([]);
+  const csvFileRef = useRef<HTMLInputElement | null>(null);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current !== null) {
@@ -79,6 +81,29 @@ export default function PLGLanding({ onShowAuth }: PLGLandingProps) {
   }, []);
 
   useEffect(() => () => stopPolling(), [stopPolling]);
+
+  const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = (reader.result as string) ?? '';
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const parsed: string[] = [];
+      for (const line of lines) {
+        const cell = line.includes(',') ? line.split(',')[0].trim() : line;
+        if (/^https?:\/\//i.test(cell)) parsed.push(cell);
+      }
+      setCsvUrls([...new Set(parsed)]);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const clearCsv = () => {
+    setCsvUrls([]);
+    if (csvFileRef.current) csvFileRef.current.value = '';
+  };
 
   const startAudit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,10 +118,14 @@ export default function PLGLanding({ onShowAuth }: PLGLandingProps) {
 
     try {
       const parsed = target.startsWith('http') ? target : `https://${target}`;
+      const payload: Record<string, unknown> = { url: parsed };
+      if (csvUrls.length > 0) {
+        payload.urls = csvUrls;
+      }
       const resp = await fetch(`${getAPIBase()}/plg/audit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: parsed }),
+        body: JSON.stringify(payload),
       });
 
       if (!resp.ok) {
@@ -153,6 +182,7 @@ export default function PLGLanding({ onShowAuth }: PLGLandingProps) {
     setError(null);
     setAuditId(null);
     setGuestStatus(null);
+    setCsvUrls([]);
   };
 
   const pipelineResult: PipelineResult | null = guestStatus
@@ -180,21 +210,55 @@ export default function PLGLanding({ onShowAuth }: PLGLandingProps) {
       </div>
 
       {phase === 'idle' && (
-        <form onSubmit={startAudit} className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://yoursite.com"
-            className="flex-1 px-4 py-3 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-growth-500 focus:border-growth-500 text-sm"
-          />
-          <button
-            type="submit"
-            className="px-6 py-3 rounded-lg bg-growth-600 text-white font-medium text-sm hover:bg-growth-700 focus:outline-none focus:ring-2 focus:ring-growth-500 focus:ring-offset-2 disabled:opacity-50"
-          >
-            Run free audit
-          </button>
-        </form>
+        <div className="space-y-3">
+          <form onSubmit={startAudit} className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://yoursite.com"
+              className="flex-1 px-4 py-3 rounded-lg border border-neutral-300 bg-white text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-growth-500 focus:border-growth-500 text-sm"
+            />
+            <button
+              type="submit"
+              className="px-6 py-3 rounded-lg bg-growth-600 text-white font-medium text-sm hover:bg-growth-700 focus:outline-none focus:ring-2 focus:ring-growth-500 focus:ring-offset-2 disabled:opacity-50"
+            >
+              Run free audit
+            </button>
+            <label className="px-4 py-3 rounded-lg font-medium text-sm text-neutral-700 border border-neutral-300
+                              hover:bg-neutral-50 cursor-pointer whitespace-nowrap transition-colors
+                              inline-flex items-center gap-2">
+              <svg className="w-4 h-4 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Upload CSV
+              <input
+                ref={csvFileRef}
+                type="file"
+                accept=".csv,.txt"
+                className="sr-only"
+                onChange={handleCsvFile}
+              />
+            </label>
+          </form>
+          {csvUrls.length > 0 && (
+            <div className="flex items-center gap-3 p-3 bg-growth-50 border border-growth-200 rounded-lg">
+              <svg className="w-5 h-5 text-growth-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="flex-1 text-sm text-growth-800 font-medium">
+                {csvUrls.length} URL{csvUrls.length !== 1 ? 's' : ''} loaded from CSV
+              </span>
+              <button
+                type="button"
+                onClick={clearCsv}
+                className="text-sm text-neutral-500 hover:text-red-600 font-medium transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {phase === 'running' && (

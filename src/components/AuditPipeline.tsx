@@ -19,6 +19,7 @@ export interface PipelineResult {
   ux?: unknown;
   cro?: unknown;
   urls_measured?: number;
+  deep_performance?: { url: string; recommendations: unknown[] }[];
   executive_summary?: string | null;
 }
 
@@ -54,6 +55,7 @@ export const PIPELINE_STEPS = [
   { key: 'analyzing_ux',           label: 'UX Analysis',           desc: 'Analyzing screenshots for brand & clarity' },
   { key: 'analyzing_cro',          label: 'CRO Analysis',         desc: 'Evaluating conversion paths & opportunities' },
   { key: 'measuring_performance',  label: 'Performance',          desc: 'Collecting Core Web Vitals via PageSpeed Insights' },
+  { key: 'deep_performance_audit', label: 'Deep Performance',     desc: 'Analyzing page structure, scripts, and resources' },
   { key: 'generating_summary',     label: 'Executive Summary',    desc: 'Synthesizing audit into a concise summary' },
 ] as const;
 
@@ -141,6 +143,8 @@ function stepDetail(stepKey: string, result: PipelineResult): string | null {
         return `${urlsMeasured} / ${result.total_urls} URLs measured`;
       }
       return result.total_urls > 0 ? `0 / ${result.total_urls} URLs to measure` : null;
+    case 'deep_performance_audit':
+      return result.deep_performance?.length ? `${result.deep_performance.length} pages audited` : null;
     case 'generating_summary':
       return result.executive_summary ? 'Complete' : null;
     default:
