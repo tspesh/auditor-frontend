@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
 import { getAPIBase } from '../lib/api';
 import { PipelineProgress, StatusBadge } from './AuditPipeline';
+import { CompiledReport } from './CompiledReport';
 import { ReportProse } from './ReportProse';
 import { Card, TagList, ScoreRing, Stat } from './ui';
 
@@ -123,6 +124,7 @@ interface AuditStatus {
   urls_measured: number;
   errors: string[];
   executive_summary: string | null;
+  compiled_report: string | null;
   created_at: string | null;
   crawl_mode?: string;
   identity_payload_sent?: string | null;
@@ -321,6 +323,27 @@ function IdentityReviewPanel({
   );
 }
 
+const BORDER_COLOR_MAP: Record<string, string> = {
+  growth: 'border-growth-500',
+  green: 'border-green-500',
+  red: 'border-red-400',
+  neutral: 'border-neutral-300',
+};
+
+function StyledList({ items, color = 'neutral' }: { items: string[]; color?: string }) {
+  if (!items.length) return <span className="text-neutral-400 italic text-sm">None detected</span>;
+  const borderCls = BORDER_COLOR_MAP[color] ?? BORDER_COLOR_MAP.neutral;
+  return (
+    <div className="space-y-2">
+      {items.map((item, i) => (
+        <div key={i} className={`border-l-2 ${borderCls} pl-3`}>
+          <ReportProse content={item} size="sm" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MessagingSection({ data, noCard = false }: { data: MessagingAnalysis; noCard?: boolean }) {
   const body = (
     <div className="space-y-6">
@@ -342,12 +365,12 @@ function MessagingSection({ data, noCard = false }: { data: MessagingAnalysis; n
 
         <div>
           <p className="text-sm font-medium text-neutral-500 mb-2">CTA Patterns</p>
-          <TagList items={data.cta_patterns} color="green" />
+          <StyledList items={data.cta_patterns} color="green" />
         </div>
 
         <div>
           <p className="text-sm font-medium text-neutral-500 mb-2">Messaging Gaps</p>
-          <TagList items={data.messaging_gaps} color="red" />
+          <StyledList items={data.messaging_gaps} color="red" />
         </div>
 
         <div className="pt-4 border-t border-neutral-100">
@@ -380,12 +403,12 @@ function UXSection({ data, noCard = false }: { data: UXAnalysis; noCard?: boolea
 
         <div>
           <p className="text-sm font-medium text-neutral-500 mb-2">UX Strengths</p>
-          <TagList items={data.ux_strengths} color="growth" />
+          <StyledList items={data.ux_strengths} color="growth" />
         </div>
 
         <div>
           <p className="text-sm font-medium text-neutral-500 mb-2">UX Gaps</p>
-          <TagList items={data.ux_gaps} color="red" />
+          <StyledList items={data.ux_gaps} color="red" />
         </div>
 
         {data.per_page_findings.length > 0 && (
@@ -443,12 +466,12 @@ function CROSection({ data, noCard = false }: { data: CROAnalysis; noCard?: bool
 
         <div>
           <p className="text-sm font-medium text-neutral-500 mb-2">Friction points</p>
-          <TagList items={data.friction_points} color="red" />
+          <StyledList items={data.friction_points} color="red" />
         </div>
 
         <div>
           <p className="text-sm font-medium text-neutral-500 mb-2">Opportunities</p>
-          <TagList items={data.opportunities} color="growth" />
+          <StyledList items={data.opportunities} color="growth" />
         </div>
 
         <div className="pt-4 border-t border-neutral-100">
@@ -1386,6 +1409,7 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
     if (isCwvOnly && result.performance?.length) {
       tabs.push({ id: 'performance', label: 'Core Web Vitals' });
     }
+    if (result.compiled_report) tabs.push({ id: 'full_report', label: 'Full Report' });
     if (result.executive_summary) tabs.push({ id: 'executive', label: 'Executive Summary' });
     tabs.push({ id: 'crawl', label: 'Crawl Summary' });
     if (result.identity) tabs.push({ id: 'identity', label: 'Business Identity' });
@@ -2128,6 +2152,14 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
             </div>
           </div>
           <div className="px-6 py-6 min-h-[200px]">
+            {activeReportTab === 'full_report' && result.compiled_report && (
+              <CompiledReport
+                markdown={result.compiled_report}
+                messaging={result.messaging}
+                ux={result.ux}
+                performance={result.performance}
+              />
+            )}
             {activeReportTab === 'executive' && result.executive_summary && (
               <ExecutiveSummarySection summary={result.executive_summary} noCard />
             )}

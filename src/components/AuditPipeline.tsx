@@ -56,7 +56,7 @@ export const PIPELINE_STEPS = [
   { key: 'analyzing_cro',          label: 'CRO Analysis',         desc: 'Evaluating conversion paths & opportunities' },
   { key: 'measuring_performance',  label: 'Performance',          desc: 'Collecting Core Web Vitals via PageSpeed Insights' },
   { key: 'deep_performance_audit', label: 'Deep Performance',     desc: 'Analyzing page structure, scripts, and resources' },
-  { key: 'generating_summary',     label: 'Executive Summary',    desc: 'Synthesizing audit into a concise summary' },
+  { key: 'compiling_report',        label: 'Compiling Report',     desc: 'Compiling findings into a unified report' },
 ] as const;
 
 export function stepStatus(stepKey: string, currentStep: string | null, auditStatus: string): 'done' | 'active' | 'pending' {
@@ -145,7 +145,7 @@ function stepDetail(stepKey: string, result: PipelineResult): string | null {
       return result.total_urls > 0 ? `0 / ${result.total_urls} URLs to measure` : null;
     case 'deep_performance_audit':
       return result.deep_performance?.length ? `${result.deep_performance.length} pages audited` : null;
-    case 'generating_summary':
+    case 'compiling_report':
       return result.executive_summary ? 'Complete' : null;
     default:
       return null;

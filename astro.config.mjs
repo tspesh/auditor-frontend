@@ -20,6 +20,7 @@ function prodSafe(val) {
 const isProd = mode === 'production';
 
 export default defineConfig({
+  output: 'server',
   adapter: cloudflare(),
   integrations: [
     react(),
