@@ -12,21 +12,23 @@ compatibility_date = "2025-12-01"
 main = "dist/_worker.js/index.js"
 compatibility_flags = ["nodejs_compat"]
 
-# Secrets (wrangler secret put) persist across deploys and are NOT wiped when you deploy.
-# Set these once, then deploy as usual:
-#   npx wrangler secret put PUBLIC_API_URL        # e.g. https://auditor.fly.dev
+# Sensitive values (Supabase keys) should be set as secrets so they don't
+# appear in source control. Secrets persist across deploys:
 #   npx wrangler secret put PUBLIC_SUPABASE_URL
 #   npx wrangler secret put PUBLIC_SUPABASE_ANON_KEY
 #
-# Do NOT rely on Dashboard "Variables" only: wrangler deploy replaces the Worker
-# config with this file, so Dashboard vars (non-secret) get overwritten by an empty
-# config. Use Secrets so values persist.
+# Non-sensitive runtime variables go in [vars] below so they survive deploys.
+# Dashboard-only vars get OVERWRITTEN by this file on every `wrangler deploy`.
 
-# Runtime variables -- set as persistent secrets so they survive redeploys:
-#   npx wrangler secret put PUBLIC_SUPABASE_URL
-#   npx wrangler secret put PUBLIC_SUPABASE_ANON_KEY
-#   npx wrangler secret put PUBLIC_API_URL
+# Production vars — deployed to Cloudflare Pages.
+# For local dev these are overridden by .dev.vars (not committed).
 [vars]
+PUBLIC_API_URL = "https://auditor.fly.dev"
+
+[[routes]]
+pattern = "audit.betteroffgrowth.com"
+zone_name = "betteroffgrowth.com"
+custom_domain = true
 
 [assets]
 directory = "dist"

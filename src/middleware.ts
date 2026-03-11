@@ -22,9 +22,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     .replace(/__PUBLIC_SUPABASE_URL__/g, safeUrl)
     .replace(/__PUBLIC_SUPABASE_ANON_KEY__/g, safeKey);
 
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
   return new Response(out, {
     status: response.status,
     statusText: response.statusText,
-    headers: response.headers,
+    headers,
   });
 });

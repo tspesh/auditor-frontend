@@ -21,7 +21,9 @@ export function useAuth() {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
-    ensureSupabaseConfig().then(() => setConfigReady(true));
+    ensureSupabaseConfig().then(() => {
+      setConfigReady(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export function useAuth() {
         setSession(s);
         setLoading(false);
       })
-      .catch(async () => {
+      .catch(async (err) => {
         await supabase.auth.signOut();
         setSession(null);
         setLoading(false);

@@ -4,12 +4,8 @@
     "/*"
   ],
   "exclude": [
-    "/",
     "/_astro/*",
     "/.assetsignore",
-    "/favicon.svg",
-    "/admin",
-    "/dashboard",
-    "/login"
+    "/favicon.svg"
   ]
 }
