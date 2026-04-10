@@ -334,7 +334,17 @@ export default function AuthForm({ onAuth, onBack, initialMode = 'login' }: Auth
         </div>
 
         <div>
-          <label htmlFor="auth-password" className={labelClass}>Password</label>
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="auth-password" className="text-sm font-medium text-neutral-700">Password</label>
+            {mode === 'login' && (
+              <a
+                href="/forgot-password"
+                className="text-xs text-growth-600 hover:text-growth-700 font-medium"
+              >
+                Forgot your password?
+              </a>
+            )}
+          </div>
           <input
             id="auth-password"
             type="password"
