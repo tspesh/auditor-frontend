@@ -1141,6 +1141,19 @@ function UrlLeaf({
   );
 }
 
+/** Best-effort target URL (origin) derived from a discovered URL, used to
+ * backfill activeTargetUrl when an audit is opened via /audit/{id} deep-link
+ * (e.g. the admin re-audit button) rather than started in-page. */
+function originFromDiscovered(urls: string[] | undefined): string | null {
+  const first = urls?.[0];
+  if (!first) return null;
+  try {
+    return new URL(first).origin;
+  } catch {
+    return first;
+  }
+}
+
 function UrlReviewPanel({
   discoveredUrls,
   targetUrl,
@@ -1466,6 +1479,10 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
 
   const handleStatusUpdate = useCallback((s: AuditStatus) => {
     setResult(s);
+    // Backfill the target URL when opened via deep-link so the URL-review panel renders.
+    if (s.discovered_urls && s.discovered_urls.length > 0) {
+      setActiveTargetUrl((prev) => prev ?? originFromDiscovered(s.discovered_urls));
+    }
     if (s.status === 'urls_ready') {
       stopPolling();
       setPhase('reviewing');
@@ -1670,6 +1687,12 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
       const resp = await fetch(`${getAPIBase()}/audit/${id}/status`, { headers: authHeaders });
       if (!resp.ok) throw new Error(`Failed to load audit: ${resp.status}`);
       const data: AuditStatus = await resp.json();
+
+      // Deep-link (e.g. admin re-audit) has no in-page targetUrl; derive it from
+      // the discovered URLs so the URL-review panel can render and validate.
+      if (!targetUrl && data.discovered_urls && data.discovered_urls.length > 0) {
+        setActiveTargetUrl((prev) => prev ?? originFromDiscovered(data.discovered_urls));
+      }
 
       if (data.status === 'urls_ready') {
         setResult(data);
