@@ -1635,6 +1635,9 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
         throw new Error(`API error ${resp.status}: ${body}`);
       }
       stopPolling();
+      setResult((prev) =>
+        prev ? { ...prev, status: 'cancelled', status_message: 'Audit cancelled', current_step: null } : prev,
+      );
       setPhase('failed');
       fetchHistory();
     } catch (err: unknown) {
