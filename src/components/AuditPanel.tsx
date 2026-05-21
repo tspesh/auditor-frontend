@@ -1483,18 +1483,32 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
   }, [stopPolling, fetchHistory]);
 
   const startPolling = useCallback((id: string) => {
+    const TERMINAL = new Set(['urls_ready', 'identity_ready', 'completed', 'failed']);
     pollRef.current = window.setInterval(async () => {
       try {
-        const resp = await fetch(`${getAPIBase()}/audit/${id}/status`, {
+        // Poll the lightweight progress payload; only fetch the full result
+        // object once the audit reaches a checkpoint or terminal state.
+        const resp = await fetch(`${getAPIBase()}/audit/${id}/status?summary=true`, {
           headers: authHeaders,
         });
         if (!resp.ok) throw new Error(`Status check failed: ${resp.status}`);
-        const s: AuditStatus = await resp.json();
-        handleStatusUpdate(s);
+        const progress = (await resp.json()) as Partial<AuditStatus> & { status: AuditStatus['status'] };
+
+        if (TERMINAL.has(progress.status)) {
+          const fullResp = await fetch(`${getAPIBase()}/audit/${id}/status`, {
+            headers: authHeaders,
+          });
+          if (fullResp.ok) {
+            handleStatusUpdate((await fullResp.json()) as AuditStatus);
+            return;
+          }
+        }
+        // Progress-only update (status/step/counts); keep polling.
+        setResult((prev) => ({ ...(prev ?? { audit_id: id }), ...progress }) as AuditStatus);
       } catch (pollErr) {
         console.error('Polling error:', pollErr);
       }
-    }, 2000);
+    }, 3000);
   }, [authHeaders, handleStatusUpdate]);
 
   const startAudit = async (overrideUrl?: string, forceRecrawl = false) => {

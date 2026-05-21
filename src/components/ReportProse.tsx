@@ -3,8 +3,22 @@
  * Uses marked for parsing and DOMPurify for safe HTML.
  */
 
-import DOMPurify from 'dompurify';
-import { marked } from 'marked';
+import { useEffect, useState } from 'react';
+import type { marked as Marked } from 'marked';
+import type DOMPurifyType from 'dompurify';
+
+// marked + DOMPurify (~1.3MB combined) are loaded lazily so they are not
+// shipped in the initial dashboard bundle — only when a report is rendered.
+type ReportLibs = { marked: typeof Marked; DOMPurify: typeof DOMPurifyType };
+let libsPromise: Promise<ReportLibs> | null = null;
+function loadReportLibs(): Promise<ReportLibs> {
+  if (!libsPromise) {
+    libsPromise = Promise.all([import('marked'), import('dompurify')]).then(
+      ([m, d]) => ({ marked: m.marked, DOMPurify: d.default }),
+    );
+  }
+  return libsPromise;
+}
 
 // Report typography: single source of truth for headings, paragraphs, lists
 const REPORT_CLASSES = {
@@ -42,7 +56,7 @@ function addReportClasses(html: string): string {
 
 let markedConfigured = false;
 
-function getReportHtml(md: string): string {
+function getReportHtml(md: string, marked: ReportLibs['marked'], DOMPurify: ReportLibs['DOMPurify']): string {
   if (!md || typeof md !== 'string') return '';
   const raw = md.trim();
   if (!raw) return '';
@@ -76,7 +90,22 @@ export interface ReportProseProps {
 }
 
 export function ReportProse({ content, className = '', size = 'default' }: ReportProseProps) {
-  const html = getReportHtml(content);
+  const [html, setHtml] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!content || !content.trim()) {
+      setHtml('');
+      return;
+    }
+    loadReportLibs().then(({ marked, DOMPurify }) => {
+      if (!cancelled) setHtml(getReportHtml(content, marked, DOMPurify));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [content]);
+
   if (!html) return null;
 
   const sizeClass = size === 'sm' ? 'text-sm' : '';

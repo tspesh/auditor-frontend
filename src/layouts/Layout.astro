@@ -21,13 +21,22 @@ const supabaseAnonKey =
   import.meta.env.PUBLIC_SUPABASE_ANON_KEY ||
   import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
   SUPABASE_PLACEHOLDER_KEY;
+
+// Backend API origin, inlined so the client never needs a runtime /api/backend-config fetch.
+// Placeholder is replaced at runtime by the Cloudflare middleware from PUBLIC_API_URL.
+const API_PLACEHOLDER_URL = '__PUBLIC_API_URL__';
+const apiUrl =
+  (typeof process !== 'undefined' && process.env?.PUBLIC_API_URL) ||
+  import.meta.env.PUBLIC_API_URL ||
+  API_PLACEHOLDER_URL;
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
-    <script define:vars={{ supabaseUrl, supabaseAnonKey }}>
+    <script define:vars={{ supabaseUrl, supabaseAnonKey, apiUrl }}>
       window.__SUPABASE_ENV__ = { url: supabaseUrl, anonKey: supabaseAnonKey };
+      window.__BACKEND_API_URL__ = apiUrl;
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

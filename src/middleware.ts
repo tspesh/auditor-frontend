@@ -13,14 +13,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const env = runtime?.env;
   const url = env?.PUBLIC_SUPABASE_URL;
   const key = env?.PUBLIC_SUPABASE_ANON_KEY || env?.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return response;
+  const apiUrl = env?.PUBLIC_API_URL;
+  if (!url && !key && !apiUrl) return response;
 
-  const html = await response.text();
-  const safeUrl = url.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  const safeKey = key.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  const out = html
-    .replace(/__PUBLIC_SUPABASE_URL__/g, safeUrl)
-    .replace(/__PUBLIC_SUPABASE_ANON_KEY__/g, safeKey);
+  const esc = (v: string) => v.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  let out = await response.text();
+  if (url) out = out.replace(/__PUBLIC_SUPABASE_URL__/g, esc(url));
+  if (key) out = out.replace(/__PUBLIC_SUPABASE_ANON_KEY__/g, esc(key));
+  if (apiUrl) out = out.replace(/__PUBLIC_API_URL__/g, esc(apiUrl));
 
   const headers = new Headers(response.headers);
   headers.delete('content-length');
