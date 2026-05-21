@@ -71,6 +71,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<PaginatedUsers | null>(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [reauditingId, setReauditingId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
@@ -133,6 +134,35 @@ export default function AdminDashboard() {
       setUsers(await resp.json());
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const handleReaudit = async (audit: AuditSummary) => {
+    const token = session?.access_token;
+    if (!token) return;
+    if (!window.confirm(`Run a full re-audit of ${audit.target_url}? This bypasses the cache and runs the entire pipeline.`)) {
+      return;
+    }
+    setError(null);
+    setReauditingId(audit.id);
+    try {
+      const resp = await fetch(`${getAPIBase()}/audit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ url: audit.target_url, force_recrawl: true }),
+      });
+      if (!resp.ok) {
+        const body = await resp.text();
+        throw new Error(`Failed to start re-audit (${resp.status}): ${body}`);
+      }
+      const data = await resp.json();
+      window.location.href = `/audit/${data.audit_id}`;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setReauditingId(null);
     }
   };
 
@@ -201,6 +231,7 @@ export default function AdminDashboard() {
                   <th className="px-6 py-3 font-medium">User</th>
                   <th className="px-6 py-3 font-medium">Status</th>
                   <th className="px-6 py-3 font-medium">Created</th>
+                  <th className="px-6 py-3 font-medium text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -214,10 +245,21 @@ export default function AdminDashboard() {
                     <td className="px-6 py-3 text-neutral-500">
                       {new Date(a.created_at).toLocaleDateString()}
                     </td>
+                    <td className="px-6 py-3 text-right">
+                      <button
+                        onClick={() => handleReaudit(a)}
+                        disabled={reauditingId !== null}
+                        className="px-3 py-1 rounded-md text-sm font-medium text-white
+                                   bg-growth-500 hover:bg-growth-600
+                                   disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {reauditingId === a.id ? 'Starting…' : 'Re-audit'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {audits.items.length === 0 && (
-                  <tr><td colSpan={4} className="px-6 py-8 text-center text-neutral-400">No audits yet</td></tr>
+                  <tr><td colSpan={5} className="px-6 py-8 text-center text-neutral-400">No audits yet</td></tr>
                 )}
               </tbody>
             </table>
