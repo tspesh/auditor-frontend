@@ -107,7 +107,7 @@ interface DeepPerformanceResult {
 
 interface AuditStatus {
   audit_id: string;
-  status: 'queued' | 'running' | 'completed' | 'failed' | 'not_found' | 'urls_ready' | 'identity_ready';
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'not_found' | 'urls_ready' | 'identity_ready' | 'cancelled';
   status_message?: string | null;
   current_step: string | null;
   pages_crawled: number;
@@ -160,6 +160,7 @@ function HistoryStatusBadge({ status }: { status: string }) {
     identity_ready: { cls: 'bg-growth-100 text-growth-700', label: 'Review identity' },
     queued:        { cls: 'bg-neutral-100 text-neutral-600', label: 'Queued' },
     failed:        { cls: 'bg-red-100 text-red-700', label: 'Failed' },
+    cancelled:     { cls: 'bg-neutral-200 text-neutral-700', label: 'Cancelled' },
   };
   const s = map[status] ?? { cls: 'bg-neutral-100 text-neutral-600', label: status };
   return (
@@ -1493,14 +1494,15 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
       stopPolling();
       setPhase('completed');
       fetchHistory();
-    } else if (s.status === 'failed') {
+    } else if (s.status === 'failed' || s.status === 'cancelled') {
       stopPolling();
       setPhase('failed');
+      fetchHistory();
     }
   }, [stopPolling, fetchHistory]);
 
   const startPolling = useCallback((id: string) => {
-    const TERMINAL = new Set(['urls_ready', 'identity_ready', 'completed', 'failed']);
+    const TERMINAL = new Set(['urls_ready', 'identity_ready', 'completed', 'failed', 'cancelled']);
     pollRef.current = window.setInterval(async () => {
       try {
         // Poll the lightweight progress payload; only fetch the full result
@@ -1616,6 +1618,32 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
     }
   };
 
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  const cancelAudit = async () => {
+    if (!auditId) return;
+    if (!window.confirm('Cancel this audit? It cannot be resumed.')) return;
+    setCancelLoading(true);
+    setError(null);
+    try {
+      const resp = await fetch(`${getAPIBase()}/audit/${auditId}/cancel`, {
+        method: 'POST',
+        headers: authHeaders,
+      });
+      if (!resp.ok) {
+        const body = await resp.text();
+        throw new Error(`API error ${resp.status}: ${body}`);
+      }
+      stopPolling();
+      setPhase('failed');
+      fetchHistory();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   const confirmUrls = async (urls: string[]) => {
     if (!auditId) return;
     setConfirmLoading(true);
@@ -1703,7 +1731,7 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
       } else if (data.status === 'completed') {
         setResult(data);
         setPhase('completed');
-      } else if (data.status === 'failed') {
+      } else if (data.status === 'failed' || data.status === 'cancelled') {
         setResult(data);
         setPhase('failed');
       } else {
@@ -2078,8 +2106,21 @@ export default function AuditPanel({ accessToken, userRole, initialAuditId }: Au
               <StatusBadge status={result.status} />
               <span className="text-sm text-neutral-500 font-mono">{auditId}</span>
             </div>
-            <div className="text-sm text-neutral-500">
-              {result.pages_crawled} / {result.total_urls} pages crawled
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-neutral-500">
+                {result.pages_crawled} / {result.total_urls} pages crawled
+              </span>
+              {!['completed', 'failed', 'cancelled', 'not_found'].includes(result.status) && (
+                <button
+                  type="button"
+                  onClick={cancelAudit}
+                  disabled={cancelLoading}
+                  className="px-3 py-1 rounded-md text-sm font-medium text-red-600 border border-red-200
+                             hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {cancelLoading ? 'Cancelling…' : 'Cancel'}
+                </button>
+              )}
             </div>
           </div>
           {result.status_message && (

@@ -44,6 +44,7 @@ function StatusBadge({ status }: { status: string }) {
     running: 'bg-growth-100 text-growth-700',
     completed: 'bg-green-100 text-green-700',
     failed: 'bg-red-100 text-red-700',
+    cancelled: 'bg-neutral-200 text-neutral-700',
   };
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${map[status] ?? map.queued}`}>
@@ -72,6 +73,7 @@ export default function AdminDashboard() {
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [reauditingId, setReauditingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
@@ -166,6 +168,31 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCancel = async (audit: AuditSummary) => {
+    const token = session?.access_token;
+    if (!token) return;
+    if (!window.confirm(`Cancel the audit for ${audit.target_url}? It cannot be resumed.`)) {
+      return;
+    }
+    setError(null);
+    setCancellingId(audit.id);
+    try {
+      const resp = await fetch(`${getAPIBase()}/audit/${audit.id}/cancel`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) {
+        const body = await resp.text();
+        throw new Error(`Failed to cancel (${resp.status}): ${body}`);
+      }
+      fetchAudits(token, page);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -245,16 +272,28 @@ export default function AdminDashboard() {
                     <td className="px-6 py-3 text-neutral-500">
                       {new Date(a.created_at).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-3 text-right">
-                      <button
-                        onClick={() => handleReaudit(a)}
-                        disabled={reauditingId !== null}
-                        className="px-3 py-1 rounded-md text-sm font-medium text-white
-                                   bg-growth-500 hover:bg-growth-600
-                                   disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {reauditingId === a.id ? 'Starting…' : 'Re-audit'}
-                      </button>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        {!['completed', 'failed', 'cancelled'].includes(a.status) && (
+                          <button
+                            onClick={() => handleCancel(a)}
+                            disabled={cancellingId !== null}
+                            className="px-3 py-1 rounded-md text-sm font-medium text-red-600 border border-red-200
+                                       hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {cancellingId === a.id ? 'Cancelling…' : 'Cancel'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleReaudit(a)}
+                          disabled={reauditingId !== null}
+                          className="px-3 py-1 rounded-md text-sm font-medium text-white
+                                     bg-growth-500 hover:bg-growth-600
+                                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {reauditingId === a.id ? 'Starting…' : 'Re-audit'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
